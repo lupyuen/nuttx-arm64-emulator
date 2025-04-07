@@ -73,11 +73,11 @@ fn main() {
     ).expect("failed to set UART_LSR");
 
     // Add Hook for emulating each Basic Block of Arm64 Instructions
-    let _ = emu.add_block_hook(1, 0, hook_block)
+    emu.add_block_hook(1, 0, hook_block)
         .expect("failed to add block hook");
 
     // Add Hook for Arm64 Memory Access
-    let _ = emu.add_mem_hook(
+    emu.add_mem_hook(
         HookType::MEM_ALL,  // Intercept Read and Write Accesses
         0,           // Begin Address
         u64::MAX,    // End Address
@@ -85,7 +85,7 @@ fn main() {
     ).expect("failed to add memory hook");
 
     // Add Interrupt Hook
-    let _ = emu.add_intr_hook(hook_interrupt).unwrap();
+    emu.add_intr_hook(hook_interrupt).unwrap();
 
     // Emulate Arm64 Machine Code
     let err = emu.emu_start(
