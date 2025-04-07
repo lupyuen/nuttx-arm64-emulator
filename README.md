@@ -664,6 +664,13 @@ call_graph:  sys_call0 --> sched_unlock
 call_graph:  click sys_call0 href "https://github.com/apache/nuttx/blob/master/arch/arm64/include/syscall.h#L151" "arch/arm64/include/syscall.h " _blank
 hook_block:  address=0x40806d90, size=04, up_irq_restore, arch/arm64/include/irq.h:383:3
 hook_block:  address=0x40806d94, size=12, sched_unlock, sched/sched/sched_unlock.c:168:1
+```
+
+_What happens if we resume the emulator?_
+
+It seems to continue running but it stops later...
+
+```bash
 call_graph:  up_irq_restore --> sched_unlock
 call_graph:  click up_irq_restore href "https://github.com/apache/nuttx/blob/master/arch/arm64/include/irq.h#L382" "arch/arm64/include/irq.h " _blank
 hook_block:  address=0x408062b4, size=04, nx_start, sched/init/nx_start.c:782:7
@@ -705,15 +712,13 @@ up_idle():
 // 408169d0 is the next instruction after WFI
 ```
 
-NuttX Scheduler seems to be waiting for Timer Interrupt, to continue booting.
+NuttX Scheduler seems to be waiting for us to handle the SysCall, to continue booting.
 
-TODO: Should we simulate the timer to start NuttX? https://lupyuen.org/articles/interrupt.html#timer-interrupt-isnt-handled
-
-# NuttX SysCall 0
+# NuttX SysCall
 
 _What's NuttX SysCall 0?_
 
-Look for SysCall 0 in the list below, it includes plenty of Scheduler Functions...
+Look for the SysCall in the list below, it includes plenty of Scheduler Functions...
 
 https://github.com/apache/nuttx/blob/master/include/sys/syscall_lookup.h
 
@@ -727,7 +732,7 @@ SYSCALL_LOOKUP(sched_unlock,               0)
 SYSCALL_LOOKUP(sched_yield,                0)
 ```
 
-Parameter to SysCall 0 is 2...
+Our X0 Parameter to SysCall is 2...
 
 ```c
 /Users/luppy/avaota/nuttx/sched/sched/sched_unlock.c:92
@@ -1202,6 +1207,8 @@ void up_enable_irq(int irq) {
 ```
 
 # TODO
+
+TODO: Simulate the Arm64 Timer Interrupt: https://lupyuen.org/articles/interrupt.html#timer-interrupt-isnt-handled
 
 TODO: Read VBAR_EL1 to fetch Vector Table. Then trigger Timer Interrupt
 
