@@ -13,7 +13,7 @@ const ELF_FILENAME: &str = "nuttx/nuttx";
 
 /// Memory Space for NuttX Kernel
 const KERNEL_SIZE: usize = 0x1000_0000;
-static mut kernel_code: [u8; KERNEL_SIZE] = [0; KERNEL_SIZE];
+static mut KERNEL_CODE: [u8; KERNEL_SIZE] = [0; KERNEL_SIZE];
 
 /// UART Base Address
 const UART0_BASE_ADDRESS: u64 = 0x02500000;
@@ -30,20 +30,18 @@ fn main() {
     // Copy NuttX Kernel into the above address
     let kernel = include_bytes!("../nuttx/Image");
     unsafe {
-        assert!(kernel_code.len() >= kernel.len());
-        kernel_code[0..kernel.len()].copy_from_slice(kernel);    
+        assert!(KERNEL_CODE.len() >= kernel.len());
+        KERNEL_CODE[0..kernel.len()].copy_from_slice(kernel);    
     }
 
     // Init Emulator in Arm64 mode
     let mut unicorn = Unicorn::new(
         Arch::ARM64,
         Mode::LITTLE_ENDIAN
-    ).expect("failed to init Unicorn");
-
-    // Magical horse mutates to bird
-    let emu = &mut unicorn;
+    ).unwrap();
 
     // Enable MMU Translation
+    let emu = &mut unicorn;
     emu.ctl_tlb_type(unicorn_engine::TlbType::CPU).unwrap();
 
     // Map 1 GB Read/Write Memory at 0x0000 0000 for Memory-Mapped I/O
@@ -51,16 +49,16 @@ fn main() {
         0x0000_0000,  // Address
         0x4000_0000,  // Size
         Permission::READ | Permission::WRITE  // Read/Write/Execute Access
-    ).expect("failed to map memory");
+    ).unwrap();
 
     // Map the NuttX Kernel to 0x4080_0000
     unsafe {
         emu.mem_map_ptr(
             ADDRESS, 
-            kernel_code.len(), 
+            KERNEL_CODE.len(), 
             Permission::READ | Permission::EXEC,
-            kernel_code.as_mut_ptr() as _
-        ).expect("failed to map kernel");
+            KERNEL_CODE.as_mut_ptr() as _
+        ).unwrap();
     }
 
     // Allwinner A64 UART Line Status Register (UART_LSR) at Offset 0x14.
@@ -70,11 +68,11 @@ fn main() {
     emu.mem_write(
         UART0_BASE_ADDRESS + 0x14,  // UART Register Address
         &[0b10_0000]  // UART Register Value
-    ).expect("failed to set UART_LSR");
+    ).unwrap();
 
     // Add Hook for emulating each Basic Block of Arm64 Instructions
     emu.add_block_hook(1, 0, hook_block)
-        .expect("failed to add block hook");
+        .unwrap();
 
     // Add Hook for Arm64 Memory Access
     emu.add_mem_hook(
@@ -82,7 +80,7 @@ fn main() {
         0,           // Begin Address
         u64::MAX,    // End Address
         hook_memory  // Hook Function
-    ).expect("failed to add memory hook");
+    ).unwrap();
 
     // Add Interrupt Hook
     emu.add_intr_hook(hook_interrupt).unwrap();
@@ -155,9 +153,9 @@ fn hook_interrupt(
 /// Called once for every Arm64 Memory Access.
 fn hook_memory(
     _: &mut Unicorn<()>,  // Emulator
-    mem_type: MemType,    // Read or Write Access
+    _mem_type: MemType,   // Read or Write Access
     address: u64,  // Accessed Address
-    size: usize,   // Number of bytes accessed
+    _size: usize,  // Number of bytes accessed
     value: i64     // Write Value
 ) -> bool {
     // Ignore RAM access, we only intercept Memory-Mapped Input / Output
@@ -184,9 +182,6 @@ fn hook_block(
     address: u64,  // Block Address
     size: u32      // Block Size
 ) {
-    // Ignore the memset() loop. TODO: Read the ELF Symbol Table to get address of memset().
-    if address >= 0x4008_9328 && address <= 0x4008_933c { return; }
-
     // Print the Function Name
     let function = map_address_to_function(address);
     if function == Some("a527_copy_overlap".into())
@@ -288,7 +283,7 @@ fn call_graph(
         Some(fname) => fname,
         None => map_location_to_function(&loc)
     };
-    if fname == "" { return; }
+    if fname.is_empty() { return; }
 
     // Skip if we are still in the same Function
     let mut last_fname = LAST_FNAME.lock().unwrap();
@@ -307,7 +302,6 @@ fn call_graph(
             let file = file.unwrap_or("".to_string());
             let line = line.unwrap_or(1) - 1;
             let url = format!("https://github.com/apache/nuttx/blob/master/{file}#L{line}");
-            assert!(fname != "");
             println!("call_graph:  {last_fname} --> {fname}");
             println!("call_graph:  click {last_fname} href \"{url}\" \"{file} \" _blank");
         }
@@ -401,6 +395,7 @@ static LAST_LOC: Lazy<Mutex<(Option<String>, Option<u32>, Option<u32>)>> = Lazy:
 
 /// Unit Test for Arm64 MMU
 /// https://github.com/unicorn-engine/unicorn/blob/master/tests/unit/test_arm64.c#L378-L486
+#[allow(dead_code)]
 fn test_arm64_mmu() {
     /*
      * Not exact the binary, but aarch64-linux-gnu-as generate this code and
@@ -563,6 +558,7 @@ fn test_arm64_mmu() {
 /// Bit 06: PTE_BLOCK_DESC_AP_USER=1
 /// Bit 08-09: PTE_BLOCK_DESC_INNER_SHARE=3
 /// Bit 10: PTE_BLOCK_DESC_AF=1
+#[allow(dead_code)]
 fn log_tlbe(address: u64, tlbe: &[u8]) {
     let mut n: u64 = 0;
     tlbe.iter().rev()
