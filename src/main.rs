@@ -19,20 +19,10 @@ static mut KERNEL_CODE: [u8; KERNEL_SIZE] = [0; KERNEL_SIZE];
 const UART0_BASE_ADDRESS: u64 = 0x02500000;
 
 /// Emulate some Arm64 Machine Code
+#[allow(static_mut_refs)]
 fn main() {
     // Test Arm64 MMU
     // test_arm64_mmu(); return;
-
-    // Arm64 Memory Address where emulation starts.
-    // Memory Space for NuttX Kernel also begins here.
-    const ADDRESS: u64 = 0x4080_0000;
-
-    // Copy NuttX Kernel into the above address
-    let kernel = include_bytes!("../nuttx/Image");
-    unsafe {
-        assert!(KERNEL_CODE.len() >= kernel.len());
-        KERNEL_CODE[0..kernel.len()].copy_from_slice(kernel);    
-    }
 
     // Init Emulator in Arm64 mode
     let mut unicorn = Unicorn::new(
@@ -50,6 +40,17 @@ fn main() {
         0x4000_0000,  // Size
         Permission::READ | Permission::WRITE  // Read/Write/Execute Access
     ).unwrap();
+
+    // Copy NuttX Kernel into memory
+    let kernel = include_bytes!("../nuttx/Image");
+    unsafe {
+        assert!(KERNEL_CODE.len() >= kernel.len());
+        KERNEL_CODE[0..kernel.len()].copy_from_slice(kernel);    
+    }
+
+    // Arm64 Memory Address where emulation starts.
+    // Memory Space for NuttX Kernel also begins here.
+    const ADDRESS: u64 = 0x4080_0000;
 
     // Map the NuttX Kernel to 0x4080_0000
     unsafe {
@@ -328,6 +329,7 @@ fn map_location_to_function(
 }
 
 /// Return true if this Function has not been shown too often
+#[allow(clippy::clone_on_copy)]
 fn can_show_function(fname: &str) -> bool {
     // Get the Occurrence Count for the Function Name
     let mut map = FUNC_COUNT.lock().unwrap();
@@ -389,6 +391,7 @@ static LAST_FNAME: Lazy<Mutex<String>> = Lazy::new(||
 );
 
 /// Last Source Location
+#[allow(clippy::type_complexity)]
 static LAST_LOC: Lazy<Mutex<(Option<String>, Option<u32>, Option<u32>)>> = Lazy::new(||
     (None, None, None).into()
 );
