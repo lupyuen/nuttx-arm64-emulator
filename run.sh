@@ -36,3 +36,4 @@ exit
 rm nuttx-boot-flow.svg
 rm nuttx/nuttx.S
 cargo publish
+git restore .
