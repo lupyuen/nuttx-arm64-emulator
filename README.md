@@ -846,7 +846,7 @@ We are doing SVC (Synchronous Exception) at EL1. Which means Unicorn Emulator sh
 
 # Jump to SysCall 0
 
-We jump to jump to VBAR_EL1 + 0x200: [src/main.rs](src/main.rs)
+This is how we jump to VBAR_EL1 + 0x200: [src/main.rs](src/main.rs)
 
 ```rust
 /// Hook Function to Handle Interrupt
@@ -931,7 +931,9 @@ dump_task:       3     0 240 RR       Kthread -   Running            00000000000
 
 # ESR_EL1 is missing
 
-Why did it fail? Who's calling arm64_fatal_handler?
+_Why did it fail? Who's calling arm64_fatal_handler?_
+
+We inspect the Arm64 Exception Handler in NuttX...
 
 https://github.com/apache/nuttx/blob/master/arch/arm64/src/common/arm64_vectors.S#L134-L203
 
@@ -1033,7 +1035,7 @@ emu.reg_write(RegisterARM64::ESR_EL1, esr_el1).unwrap();
 emu.reg_write(RegisterARM64::PC, svc).unwrap();
 ```
 
-NuttX on Unicorn now boots to SysCall from NuttX Apps. Yay!
+NuttX on Unicorn now boots to NSH Shell. Yay!
 
 ```bash
 - Ready to Boot Primary CPU
@@ -1165,11 +1167,13 @@ gettid():
     2f04:	d65f03c0 	ret
 ```
 
+Up Next: We implement SysCalls for NuttX Apps at EL0.
+
+# TODO
+
 TODO: Who calls gettid?
 
 TODO: Renegerate nuttx-init.S with Debug Symbols
-
-# Unicorn Output
 
 TODO: GICv3 won't work in Unicorn, so we have to simulate Timer Interrupts and I/O Interrupts
 
@@ -1194,8 +1198,6 @@ nxtask_activate: AppBringUp pid=3,TCB=0x4084c190
 nx_start: CPU0: Beginning Idle Loop
 ```
 
-# Emulate GICv3 in Unicorn
-
 TODO: up_enable_irq calls arm64_gic_irq_enable. So we should emulate GICv3:
 
 arch/arm64/src/common/arm64_gicv3.c:683
@@ -1205,8 +1207,6 @@ void up_enable_irq(int irq) {
   arm64_gic_irq_enable(irq);
   ...
 ```
-
-# TODO
 
 TODO: Simulate the Arm64 Timer Interrupt: https://lupyuen.org/articles/interrupt.html#timer-interrupt-isnt-handled
 
