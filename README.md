@@ -507,6 +507,8 @@ click mm_malloc href "https://github.com/apache/nuttx/blob/master/mm/mm_heap/mm_
 
 Read the articles...
 
+-   ["Creating the Unicorn Emulator for Avaota-A1 SBC (Apache NuttX RTOS)"](https://lupyuen.org/articles/unicorn4.html)
+
 -   ["Inside Arm64 MMU: Unicorn Emulator vs Apache NuttX RTOS"](https://lupyuen.org/articles/unicorn3.html)
 
 -   ["Porting Apache NuttX RTOS to Avaota-A1 SBC (Allwinner A527 SoC)"](https://lupyuen.org/articles/avaota.html)

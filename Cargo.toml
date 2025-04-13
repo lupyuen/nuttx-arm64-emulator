@@ -1,10 +1,10 @@
 [package]
 name = "nuttx-arm64-emulator"
-version = "1.0.6"
+version = "1.0.7"
 edition = "2021"
 license = "Apache-2.0"
 description = "Emulate Apache NuttX RTOS for Arm64 with Unicorn Emulator (Avaota-A1 SBC)"
-homepage = "https://lupyuen.org/articles/unicorn3.html"
+homepage = "https://lupyuen.org/articles/unicorn4.html"
 repository = "https://github.com/lupyuen/nuttx-arm64-emulator"
 readme = "README.md"
 keywords = ["nuttx", "rtos", "unicorn"]
